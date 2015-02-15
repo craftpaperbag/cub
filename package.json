@@ -1,0 +1,10 @@
+{
+  "name": "cub",
+  "version": "0.0.0",
+  "description": "command-line github tool ### issues",
+  "homepage": "https://github.com/craftpaperbag/cub",
+  "devDependencies": {
+    "argv": "0.0.2",
+    "request": "~2.53.0"
+  }
+}
