@@ -15,6 +15,7 @@ after these 3 steps,
 yout repository will be like below
 
     your-repo/
+      cub   <-------- cub command
       .cub/ <-------- cub directory
         .cub.json <-- cub's config file
         ...
