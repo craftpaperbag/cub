@@ -17,7 +17,8 @@ argv.option({
   name: 'user',
   short: 'u',
   type: 'string',
-  description: "your github's login name",
+  description: "your github's login name.\n" +
+               "This takes priority over your config. \n",
   example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
 });
 
@@ -25,7 +26,9 @@ argv.option({
   name: 'token',
   short: 't',
   type: 'string',
-  description: "your github's token (see https://help.github.com/articles/creating-an-access-token-for-command-line-use/)",
+  description: "your github's token.\n" +
+               "This takes priority over your config. \n" +
+               "(see https://help.github.com/articles/creating-an-access-token-for-command-line-use/)",
   example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
 });
 
@@ -37,8 +40,26 @@ if ( params.targets.length !== 1 ) {
 }
 
 var command = params.targets[0];
+
+// ----------------------------------------------
+// get params from .cub
+
+var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
+
+var cf;
+
+try {
+  cf = require('./.cub.json')
+} catch (e) {
+  console.log('error');
+  console.log(e);
+  return;
+}
+
 var user = params.options.user;
 var token = params.options.token;
+if ( ! user ) { user = cf.user; }
+if ( ! token ) { token = cf.token; }
 
 // ----------------------------------------------
 // get directory name (cub regards it as repo-name)
