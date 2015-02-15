@@ -15,10 +15,10 @@ after these 3 steps,
 yout repository will be like below
 
     your-repo/
+      ...
       cub   <-------- cub command
       .cub/ <-------- cub directory
         .cub.json <-- cub's config file
-        ...
 
 #### 1 create token
 
@@ -47,7 +47,7 @@ add '.cub/' & 'cub' .gitignore
 
 if you feel hassle these options,
 please make '.cub.json' in your '.cub/' directory.
-like this. ( .gitignore)
+like this.
 
     $ vim .cub/.cub.json
       {
