@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+
 'use strict';
+
 var DEBUG = false;
 var argv = require('argv');
 var fs = require('fs');
@@ -45,6 +47,13 @@ if ( params.targets.length !== 1 ) {
 var command = params.targets[0];
 
 // ----------------------------------------------
+// get directory name (cub regards it as repo-name)
+
+var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
+var path = path.split('/');
+var repoName = path[path.length - 1];
+
+// ----------------------------------------------
 // get params from .cub
 
 var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
@@ -63,13 +72,8 @@ var user = params.options.user;
 var token = params.options.token;
 if ( ! user ) { user = cf.user; }
 if ( ! token ) { token = cf.token; }
+if ( cf.repo ) { repoName = cf.repo; }
 
-// ----------------------------------------------
-// get directory name (cub regards it as repo-name)
-
-var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
-var path = path.split('/');
-var repoName = path[path.length - 1]
 debug(params);
 debug(path);
 debug(repoName);
@@ -87,7 +91,9 @@ var auth = "Basic " + new Buffer(user + ":" + token).toString("base64");
 debug(auth);
 
 if (command === 'issues' || command === 'i') {
-  debug('[' + user + '/' + repoName +'] issues');
+
+  console.log('  [' + user + '/' + repoName +'] issues');
+
   request({ url: url, headers: { 'Authorization' : auth, 'User-Agent': 'cub' } },
     function (err, response, body) {
       if ( err || (response && response.statusCode !== 200)) {
@@ -97,9 +103,16 @@ if (command === 'issues' || command === 'i') {
         }
         return;
       }
-      console.log(JSON.parse(body));
+      var issues = JSON.parse(body);
+      for (var i in issues) {
+        var issue = issues[i];
+        debug(issues);
+        console.log("  #" + issue.number + "  " + issue.title);
+      }
     }
   );
+
+
 } else {
   console.log("sorry, cub cannot use '" + command + "'");
   usage();
