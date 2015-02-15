@@ -1,9 +1,11 @@
 # cub 0.0.1
+
 command-line tool for browsing github.
+
 -----
 ## features
 
-### issues
+###### issues
 list of issues with issue-numbers.
 
     $ cub issues
@@ -18,11 +20,11 @@ yout repository will be like below
         .cub.json <-- cub's config file
         ...
 
-### 1 create token
+###### 1 create token
 
 cub needs your token. see [Github help](https://help.github.com/articles/creating-an-access-token-for-command-line-use/)
 
-### 2 clone
+###### 2 clone
 
 clone cub into your repo's working-directory (and put its link)
 
@@ -41,7 +43,7 @@ add '.cub/' & 'cub' .gitignore
     .cub
     cub
 
-### 3 config cub
+###### 3 config cub
 
 if you feel hassle these options,
 please make '.cub.json' in your '.cub/' directory.
