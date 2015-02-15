@@ -17,7 +17,8 @@ function debug(s) {
 }
 
 // ----------------------------------------------
-// parameters
+// parameters definition
+
 
 argv.option({
   name: 'user',
@@ -47,74 +48,119 @@ if ( params.targets.length !== 1 ) {
 var command = params.targets[0];
 
 // ----------------------------------------------
-// get directory name (cub regards it as repo-name)
-
-var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
-var path = path.split('/');
-var repoName = path[path.length - 1];
-
-// ----------------------------------------------
 // get params from .cub
 
-var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
+var Options = function ( argvResult ) {
+  var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
+  var path = path.split('/');
+  var repo = path[path.length - 1];
 
-var cf;
+  this.user = argvResult.options.user;
+  this.token = argvResult.options.token;
+  this.repo = repo;
 
-try {
-  cf = require('./.cub.json')
-} catch (e) {
-  console.log('error');
-  console.log(e);
-  return;
+  this.openConfig();
+  return this;
 }
 
-var user = params.options.user;
-var token = params.options.token;
-if ( ! user ) { user = cf.user; }
-if ( ! token ) { token = cf.token; }
-if ( cf.repo ) { repoName = cf.repo; }
+Options.prototype.openConfig = function () {
+  var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
+  var cf;
 
-debug(params);
-debug(path);
-debug(repoName);
-debug(user);
-debug(token);
+  try {
+    cf = require('./.cub.json')
+  } catch (e) {
+    console.log('error');
+    console.log(e);
+    throw e;
+  }
+
+  if ( ! this.user ) { this.user = cf.user; }
+  if ( ! this.token ) { this.token = cf.token; }
+  if ( cf.repo ) { this.repo = cf.repo; }
+
+  debug(this.user);
+  debug(this.token);
+  debug(path);
+  debug(this.repo);
+}
+
+Options.prototype.getAuth = function () {
+  var auth = "Basic " + new Buffer(this.user + ":" + this.token).toString("base64");
+  debug(auth);
+  return auth;
+}
+
+var options = new Options(params);
+
 // ----------------------------------------------
 // HTTP GET ----> github api
 //
 
-var url = "https://api.github.com/repos/{owner}/{repo}/issues";
-    url = url.replace("{owner}", user);
-    url = url.replace("{repo}", repoName);
-debug(url);
-var auth = "Basic " + new Buffer(user + ":" + token).toString("base64");
-debug(auth);
-
-if (command === 'issues' || command === 'i') {
-
-  console.log('  [' + user + '/' + repoName +'] issues');
-
-  request({ url: url, headers: { 'Authorization' : auth, 'User-Agent': 'cub' } },
-    function (err, response, body) {
-      if ( err || (response && response.statusCode !== 200)) {
-        console.log('error');
-        if (response) {
-          console.log(response.statusCode);
-        }
-        return;
-      }
-      var issues = JSON.parse(body);
-      for (var i in issues) {
-        var issue = issues[i];
-        debug(issues);
-        console.log("  #" + issue.number + "  " + issue.title);
-      }
-    }
-  );
-
-
-} else {
-  console.log("sorry, cub cannot use '" + command + "'");
-  usage();
-  return;
+var Cub = function (method, options) {
+  this.methods = {
+    getIssues: {
+      url: "https://api.github.com/repos/{user}/{repo}/issues",
+      proc: this.procGetIssues,
+      title: "issues",
+    },
+  };
+  this.method = method;
+  this.options = options;
+  this.createUrl();
+  this.createHeader();
+  return this;
 }
+
+Cub.prototype.createUrl = function () {
+  this.url = this.methods[this.method].url;
+  this.url.replace("{user}", this.user).replace("{repo}", this.repo);
+  debug(this.url);
+}
+
+Cub.prototype.createHeader = function () {
+  this.headers = { 'Authorization' : this.options.getAuth(), 'User-Agent': 'cub' };
+}
+
+Cub.prototype.printTitle = function () {
+  console.log('  [' + this.options.user + '/' + this.options.repoName +'] ' + this.methods[this.method].title);
+}
+
+Cub.prototype.run = function () {
+  if ( ! this.methods[this.method] ) {
+    this.printTitle();
+
+    request(
+      { url: this.url, headers: this.headers },
+      function (err, response, body) {
+        if ( err || (response && response.statusCode !== 200)) {
+          console.log('error');
+          if (response) {
+            console.log(response.statusCode);
+          }
+          throw err;
+        }
+        this.methods[this.method].proc(body);
+      }
+    );
+  } else {
+    console.log("sorry, cub cannot use '" + command + "'");
+    usage();
+    return;
+  }
+}
+
+Cub.prototype.procGetIssues = function (body) {
+  var issues = JSON.parse(body);
+  for (var i in issues) {
+    var issue = issues[i];
+    debug(issues);
+    console.log("  #" + issue.number + "  " + issue.title);
+  }
+}
+
+var cub = new Cub('getIssues', options);
+cub.run();
+
+
+// TODO: usage() -> Cub.usage();
