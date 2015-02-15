@@ -17,8 +17,7 @@ argv.option({
   name: 'user',
   short: 'u',
   type: 'string',
-  description: "your github's login name.\n" +
-               "This takes priority over your config. \n",
+  description: "your github's login name.",
   example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
 });
 
