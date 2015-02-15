@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-
+var DEBUG = false;
 var argv = require('argv');
 var fs = require('fs');
 var request = require('request');
@@ -8,6 +8,10 @@ var request = require('request');
 function usage() {
   console.log('  issues: list of issues');
   console.log('          $ cub -u user -t tokennnnnn issues')
+}
+
+function debug(s) {
+  if (DEBUG) console.log(s);
 }
 
 // ----------------------------------------------
@@ -66,11 +70,11 @@ if ( ! token ) { token = cf.token; }
 var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
 var path = path.split('/');
 var repoName = path[path.length - 1]
-console.log(params);
-console.log(path);
-console.log(repoName);
-console.log(user);
-console.log(token);
+debug(params);
+debug(path);
+debug(repoName);
+debug(user);
+debug(token);
 // ----------------------------------------------
 // HTTP GET ----> github api
 //
@@ -78,12 +82,12 @@ console.log(token);
 var url = "https://api.github.com/repos/{owner}/{repo}/issues";
     url = url.replace("{owner}", user);
     url = url.replace("{repo}", repoName);
-console.log(url);
+debug(url);
 var auth = "Basic " + new Buffer(user + ":" + token).toString("base64");
-console.log(auth);
+debug(auth);
 
 if (command === 'issues' || command === 'i') {
-  console.log('[' + user + '/' + repoName +'] issues');
+  debug('[' + user + '/' + repoName +'] issues');
   request({ url: url, headers: { 'Authorization' : auth, 'User-Agent': 'cub' } },
     function (err, response, body) {
       if ( err || (response && response.statusCode !== 200)) {
@@ -93,13 +97,11 @@ if (command === 'issues' || command === 'i') {
         }
         return;
       }
-      console.log('issues');
       console.log(JSON.parse(body));
     }
   );
 } else {
-  console.log('error');
-  console.log("  sorry, cub cannot use '" + command + "'");
+  console.log("sorry, cub cannot use '" + command + "'");
   usage();
   return;
 }
