@@ -7,18 +7,12 @@ var argv = require('argv');
 var fs = require('fs');
 var request = require('request');
 
-function usage() {
-  console.log('  issues: list of issues');
-  console.log('          $ cub -u user -t tokennnnnn issues')
-}
-
 function debug(s) {
   if (DEBUG) console.log(s);
 }
 
 // ----------------------------------------------
 // parameters definition
-
 
 argv.option({
   name: 'user',
@@ -38,15 +32,6 @@ argv.option({
   example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
 });
 
-var params = argv.run();
-
-if ( params.targets.length !== 1 ) {
-  usage();
-  return;
-}
-
-var command = params.targets[0];
-
 // ----------------------------------------------
 // get params from .cub
 
@@ -61,7 +46,7 @@ var Options = function ( argvResult ) {
 
   this.openConfig();
   return this;
-}
+};
 
 Options.prototype.openConfig = function () {
   var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
@@ -93,13 +78,11 @@ Options.prototype.getAuth = function () {
   return auth;
 }
 
-var options = new Options(params);
-
 // ----------------------------------------------
 // HTTP GET ----> github api
 //
 
-var Cub = function (method, options) {
+var Cub = function () {
   this.methods = {
     issues: {
       url: "https://api.github.com/repos/{user}/{repo}/issues",
@@ -110,9 +93,28 @@ var Cub = function (method, options) {
   this.aliases = {
     i: 'issues',
   };
-  this.method = method;
-  this.options = options;
+
+  var params = argv.run();
+  if ( params.targets.length !== 1 ) {
+    usageExit();
+  }
+  this.method = params.targets[0];
+
+  this.options = new Options(params);
+
+  if ( ! this.validMethod() ) {
+    console.log("sorry, cub cannot use '" + command + "'");
+    this.usageExit();
+  }
+
   return this;
+}
+
+Cub.prototype.usageExit = function () {
+  console.log('  issues: list of issues');
+  console.log('          $ cub [-u user] [-t token] issues');
+  console.log('          $ cub [-u user] [-t token] i');
+  process.exit(1);
 }
 
 Cub.prototype.createUrl = function () {
@@ -151,9 +153,6 @@ Cub.prototype.run = function () {
       }
     );
   } else {
-    console.log("sorry, cub cannot use '" + command + "'");
-    usage();
-    return;
   }
 }
 
@@ -178,7 +177,7 @@ Cub.prototype.procGetIssues = function (body) {
   }
 }
 
-var cub = new Cub(command, options);
+var cub = new Cub();
 cub.run();
 
-// TODO: usage() -> Cub.usage();
+// TODO: move createUrl() createHeader() into Cub()
