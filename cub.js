@@ -68,12 +68,14 @@ Options.prototype.openConfig = function () {
   var cf;
 
   try {
-    cf = require('./.cub.json')
+    cf = require('./.cub.json');
   } catch (e) {
     console.log('error');
     console.log(e);
     throw e;
   }
+
+  debug(cf);
 
   if ( ! this.user ) { this.user = cf.user; }
   if ( ! this.token ) { this.token = cf.token; }
@@ -99,22 +101,23 @@ var options = new Options(params);
 
 var Cub = function (method, options) {
   this.methods = {
-    getIssues: {
+    issues: {
       url: "https://api.github.com/repos/{user}/{repo}/issues",
       proc: this.procGetIssues,
       title: "issues",
     },
   };
+  this.aliases = {
+    i: 'issues',
+  };
   this.method = method;
   this.options = options;
-  this.createUrl();
-  this.createHeader();
   return this;
 }
 
 Cub.prototype.createUrl = function () {
   this.url = this.methods[this.method].url;
-  this.url.replace("{user}", this.user).replace("{repo}", this.repo);
+  this.url = this.url.replace("{user}", this.options.user).replace("{repo}", this.options.repo);
   debug(this.url);
 }
 
@@ -123,16 +126,20 @@ Cub.prototype.createHeader = function () {
 }
 
 Cub.prototype.printTitle = function () {
-  console.log('  [' + this.options.user + '/' + this.options.repoName +'] ' + this.methods[this.method].title);
+  console.log('  [' + this.options.user + '/' + this.options.repo +'] ' + this.methods[this.method].title);
 }
 
 Cub.prototype.run = function () {
-  if ( ! this.methods[this.method] ) {
+  if ( this.validMethod() ) {
+    this.createUrl();
+    this.createHeader();
     this.printTitle();
-
+    var _cub = this;
     request(
       { url: this.url, headers: this.headers },
       function (err, response, body) {
+        // !CAUTION! scope changed
+        // this is not Cub's object
         if ( err || (response && response.statusCode !== 200)) {
           console.log('error');
           if (response) {
@@ -140,7 +147,7 @@ Cub.prototype.run = function () {
           }
           throw err;
         }
-        this.methods[this.method].proc(body);
+        _cub.methods[_cub.method].proc(body);
       }
     );
   } else {
@@ -148,6 +155,18 @@ Cub.prototype.run = function () {
     usage();
     return;
   }
+}
+
+Cub.prototype.validMethod = function () {
+  if ( this.methods[this.method] ) {
+    return this.method;
+  }
+  var alias = this.aliases[this.method];
+  if ( alias ) {
+    this.method = alias;
+    return this.method;
+  }
+  return false;
 }
 
 Cub.prototype.procGetIssues = function (body) {
@@ -159,8 +178,7 @@ Cub.prototype.procGetIssues = function (body) {
   }
 }
 
-var cub = new Cub('getIssues', options);
+var cub = new Cub(command, options);
 cub.run();
-
 
 // TODO: usage() -> Cub.usage();
