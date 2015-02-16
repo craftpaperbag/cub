@@ -1,13 +1,13 @@
-# cub 0.0.2
+# cub 0.0.3
 
 Command-line tool for browsing github.
 
 ## Features
 
 #### Issues
-List of issues with issue-numbers.
 
-    $ cub issues
+    $ cub issues        # List of issues with issue-numbers.
+    $ cub open          # Open new issue
 
 ## Getting started
 
@@ -57,7 +57,7 @@ As follows
 
 then, you can use
 
-    $ cub issues
+    $ cub
 
 ## Options
 
