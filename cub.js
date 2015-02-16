@@ -163,42 +163,64 @@ Cub.prototype.validMethod = function () {
 // procs
 //
 
+Cub.prototype.request = function (opts, successCode, callback) {
+  successCode = successCode || 200;
+  debug('opts: ' + opts);
+  debug('successCode: ' + successCode);
+  request(opts, function (err, response, body) {
+    //
+    // !CAUTION! scope changed
+    // this is not Cub's object
+    if ( err || (response && response.statusCode != successCode)) {
+      console.log('error: ' + err);
+      if (response) {
+        console.log(response.statusCode);
+      }
+      debug(body);
+      throw err;
+    }
+    
+    callback(body);
+
+  });
+};
+
 Cub.prototype.procGetIssues = function () {
   var params = {
     url: this.createUrl(),
     headers: this.createHeader(),
   };
   var _cub = this;
-  request(
-    { url: _cub.createUrl(), headers: _cub.createHeader() },
-    function (err, response, body) {
-      //
-      // !CAUTION! scope changed
-      // this is not Cub's object
-      if ( err || (response && response.statusCode !== 200)) {
-        console.log('error: ' + err);
-        if (response) {
-          console.log(response.statusCode);
-        }
-        console.log(body);
-        throw err;
-      }
-      var issues = JSON.parse(body);
-      for (var i in issues) {
-        var issue = issues[i];
-        debug(issues);
-        console.log("  #" + issue.number + "  " + issue.title);
-      }
+  var opts = { url: _cub.createUrl(), headers: _cub.createHeader() };
+  this.request(opts, 200, function (body) {
+    //
+    // !CAUTION! scope changed
+    // now 'this' is not Cub object
+    var issues = JSON.parse(body);
+    for (var i in issues) {
+      var issue = issues[i];
+      debug(issues);
+      console.log("  #" + issue.number + "  " + issue.title);
     }
-  );
+  });
 };
 
+// TODO: method->POST
+// TODO: successCode-> 201
 Cub.prototype.procOpenIssue = function () {
   var _cub = this;
+  var opts = {
+    url: _cub.createUrl(),
+    headers: _cub.createHeader(),
+    method: 'GET',
+  };
   var face = readline.createInterface(process.stdin, process.stdout);
   face.question('  title > ', function (line) {
     console.log("  ["+line+"]");
     face.close();
+    _cub.request(opts, 200, function (body) {
+      console.log('Cub#request() works ! :D');
+    });
   });
 };
 //-----------------------------------------------
