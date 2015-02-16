@@ -2,7 +2,7 @@
 
 'use strict';
 
-var DEBUG = true;
+var DEBUG = false;
 var argv = require('argv');
 var fs = require('fs');
 var request = require('request');
@@ -81,7 +81,6 @@ Options.prototype.getAuth = function () {
 //
 
 var Cub = function () {
-  this.version = '0.0.3';
   this.methods = {
     issues: {
       url: "https://api.github.com/repos/{user}/{repo}/issues",
@@ -107,10 +106,7 @@ var Cub = function () {
 
   this.options = new Options(params);
 
-  if ( this.validMethod() ) {
-    this.createUrl();
-    this.createHeader();
-  } else {
+  if ( ! this.validMethod() ) {
     console.log("sorry, cub cannot use '" + this.method + "'");
     this.usageExit();
   }
@@ -120,7 +116,8 @@ var Cub = function () {
 
 Cub.prototype.run = function () {
   this.printTitle();
-  this.methods[this.method].proc();
+  this.proc = this.methods[this.method].proc;
+  this.proc();
 }
 
 Cub.prototype.usageExit = function () {
@@ -131,17 +128,18 @@ Cub.prototype.usageExit = function () {
 }
 
 Cub.prototype.createUrl = function () {
-  this.url = this.methods[this.method].url;
-  this.url = this.url.replace("{user}", this.options.user).replace("{repo}", this.options.repo);
-  debug(this.url);
+  var url = this.methods[this.method].url;
+  var url = url.replace("{user}", this.options.user);
+  var url = url.replace("{repo}", this.options.repo);
+  return url;
 }
 
 Cub.prototype.createHeader = function () {
-  this.headers = {
+  var headers = {
     'Authorization': this.options.getAuth(),
-    'User-Agent': 'cub/' + this.version,
+    'User-Agent': 'cub',
   };
-  debug(this.headers);
+  return headers;
 }
 
 Cub.prototype.printTitle = function () {
@@ -165,10 +163,15 @@ Cub.prototype.validMethod = function () {
 //
 
 Cub.prototype.procGetIssues = function () {
+  var params = {
+    url: this.createUrl(),
+    headers: this.createHeader(),
+  };
   var _cub = this;
   request(
-    { url: this.url, headers: this.headers },
+    { url: _cub.createUrl(), headers: _cub.createHeader() },
     function (err, response, body) {
+      //
       // !CAUTION! scope changed
       // this is not Cub's object
       if ( err || (response && response.statusCode !== 200)) {
