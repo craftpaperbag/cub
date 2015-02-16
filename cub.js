@@ -6,31 +6,29 @@ var DEBUG = false;
 var argv = require('argv');
 var fs = require('fs');
 var request = require('request');
-
-function debug(s) {
-  if (DEBUG) console.log(s);
-}
+function debug(s) { if (DEBUG) console.log(s); }
 
 // ----------------------------------------------
 // parameters definition
+function defineApp() {
+  argv.option({
+    name: 'user',
+    short: 'u',
+    type: 'string',
+    description: "your github's login name.",
+    example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
+  });
 
-argv.option({
-  name: 'user',
-  short: 'u',
-  type: 'string',
-  description: "your github's login name.",
-  example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
-});
-
-argv.option({
-  name: 'token',
-  short: 't',
-  type: 'string',
-  description: "your github's token.\n" +
-               "This takes priority over your config. \n" +
-               "(see https://help.github.com/articles/creating-an-access-token-for-command-line-use/)",
-  example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
-});
+  argv.option({
+    name: 'token',
+    short: 't',
+    type: 'string',
+    description: "your github's token.\n" +
+                 "This takes priority over your config. \n" +
+                 "(see https://help.github.com/articles/creating-an-access-token-for-command-line-use/)",
+    example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
+  });
+}
 
 // ----------------------------------------------
 // get params from .cub
@@ -102,7 +100,10 @@ var Cub = function () {
 
   this.options = new Options(params);
 
-  if ( ! this.validMethod() ) {
+  if ( this.validMethod() ) {
+    this.createUrl();
+    this.createHeader();
+  } else {
     console.log("sorry, cub cannot use '" + this.method + "'");
     this.usageExit();
   }
@@ -132,28 +133,23 @@ Cub.prototype.printTitle = function () {
 }
 
 Cub.prototype.run = function () {
-  if ( this.validMethod() ) {
-    this.createUrl();
-    this.createHeader();
-    this.printTitle();
-    var _cub = this;
-    request(
-      { url: this.url, headers: this.headers },
-      function (err, response, body) {
-        // !CAUTION! scope changed
-        // this is not Cub's object
-        if ( err || (response && response.statusCode !== 200)) {
-          console.log('error');
-          if (response) {
-            console.log(response.statusCode);
-          }
-          throw err;
+  this.printTitle();
+  var _cub = this;
+  request(
+    { url: this.url, headers: this.headers },
+    function (err, response, body) {
+      // !CAUTION! scope changed
+      // this is not Cub's object
+      if ( err || (response && response.statusCode !== 200)) {
+        console.log('error: ' + err);
+        if (response) {
+          console.log(response.statusCode);
         }
-        _cub.methods[_cub.method].proc(body);
+        throw err;
       }
-    );
-  } else {
-  }
+      _cub.methods[_cub.method].proc(body);
+    }
+  );
 }
 
 Cub.prototype.validMethod = function () {
@@ -176,8 +172,9 @@ Cub.prototype.procGetIssues = function (body) {
     console.log("  #" + issue.number + "  " + issue.title);
   }
 }
+//-----------------------------------------------
+// main
 
+defineApp();
 var cub = new Cub();
 cub.run();
-
-// TODO: move createUrl() createHeader() into Cub()
