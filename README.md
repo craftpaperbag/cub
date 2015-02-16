@@ -1,18 +1,18 @@
-# cub 0.0.1
+# cub 0.0.2
 
-command-line tool for browsing github.
+Command-line tool for browsing github.
 
-## features
+## Features
 
-###### issues
-list of issues with issue-numbers.
+#### Issues
+List of issues with issue-numbers.
 
     $ cub issues
 
-## getting started
+## Getting started
 
-after these 3 steps,
-yout repository will be like below
+After these 3 steps,
+your repository will be as follows.
 
     your-repo/
       ...
@@ -20,34 +20,34 @@ yout repository will be like below
       .cub/ <-------- cub directory
         .cub.json <-- cub's config file
 
-#### 1 create token
+#### 1. Create token
 
-cub needs your token. see [Github help](https://help.github.com/articles/creating-an-access-token-for-command-line-use/)
+Cub needs your token. see [Github help](https://help.github.com/articles/creating-an-access-token-for-command-line-use/).
 
-#### 2 clone
+#### 2. Clone
 
-clone cub into your repo's working-directory (and put its link)
+Clone cub into your repo's working-directory. (and put its link)
 
     $ cd work/your-repo
     $ git clone https://github.com/craftpaperbag/cub.githttps://github.com/craftpaperbag/cub.git
     $ mv cub .cub
     $ ln -s .cub/cub.js cub
 
-you can use
+Now, you can use
 
     $ cub issues -u username -t yourtokenishere
 
-add '.cub/' & 'cub' .gitignore
+Add '.cub/' & 'cub' .gitignore
 
     $ vim .gitignore
     .cub
     cub
 
-#### 3 config cub
+#### 3. Config cub
 
-if you feel hassle these options,
-please make '.cub.json' in your '.cub/' directory.
-like this.
+If you feel hassled these options,
+Please make '.cub.json' in your '.cub/' directory.
+As follows
 
     $ vim .cub/.cub.json
       {
@@ -59,7 +59,7 @@ then, you can use
 
     $ cub issues
 
-## options
+## Options
 
     --user(-u)  : your github's login name
                   This takes priority over your config.
