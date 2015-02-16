@@ -2,7 +2,7 @@
 
 'use strict';
 
-var DEBUG = false;
+var DEBUG = true;
 var argv = require('argv');
 var fs = require('fs');
 var request = require('request');
@@ -77,19 +77,26 @@ Options.prototype.getAuth = function () {
 }
 
 // ----------------------------------------------
-// HTTP GET ----> github api
+// Cub
 //
 
 var Cub = function () {
+  this.version = '0.0.3';
   this.methods = {
     issues: {
       url: "https://api.github.com/repos/{user}/{repo}/issues",
       proc: this.procGetIssues,
       title: "issues",
     },
+    open: {
+      url: "https://api.github.com/repos/{user}/{repo}/issues",
+      proc: this.procOpenIssue,
+      title: "open issue",
+    },
   };
   this.aliases = {
     i: 'issues',
+    o: 'open',
   };
 
   var params = argv.run();
@@ -111,6 +118,11 @@ var Cub = function () {
   return this;
 }
 
+Cub.prototype.run = function () {
+  this.printTitle();
+  this.methods[this.method].proc();
+}
+
 Cub.prototype.usageExit = function () {
   console.log('  issues: list of issues');
   console.log('          $ cub [-u user] [-t token] issues');
@@ -125,31 +137,15 @@ Cub.prototype.createUrl = function () {
 }
 
 Cub.prototype.createHeader = function () {
-  this.headers = { 'Authorization' : this.options.getAuth(), 'User-Agent': 'cub' };
+  this.headers = {
+    'Authorization': this.options.getAuth(),
+    'User-Agent': 'cub/' + this.version,
+  };
+  debug(this.headers);
 }
 
 Cub.prototype.printTitle = function () {
   console.log('  [' + this.options.user + '/' + this.options.repo +'] ' + this.methods[this.method].title);
-}
-
-Cub.prototype.run = function () {
-  this.printTitle();
-  var _cub = this;
-  request(
-    { url: this.url, headers: this.headers },
-    function (err, response, body) {
-      // !CAUTION! scope changed
-      // this is not Cub's object
-      if ( err || (response && response.statusCode !== 200)) {
-        console.log('error: ' + err);
-        if (response) {
-          console.log(response.statusCode);
-        }
-        throw err;
-      }
-      _cub.methods[_cub.method].proc(body);
-    }
-  );
 }
 
 Cub.prototype.validMethod = function () {
@@ -164,14 +160,38 @@ Cub.prototype.validMethod = function () {
   return false;
 }
 
-Cub.prototype.procGetIssues = function (body) {
-  var issues = JSON.parse(body);
-  for (var i in issues) {
-    var issue = issues[i];
-    debug(issues);
-    console.log("  #" + issue.number + "  " + issue.title);
-  }
-}
+// ----------------------------------------------
+// procs
+//
+
+Cub.prototype.procGetIssues = function () {
+  var _cub = this;
+  request(
+    { url: this.url, headers: this.headers },
+    function (err, response, body) {
+      // !CAUTION! scope changed
+      // this is not Cub's object
+      if ( err || (response && response.statusCode !== 200)) {
+        console.log('error: ' + err);
+        if (response) {
+          console.log(response.statusCode);
+        }
+        console.log(body);
+        throw err;
+      }
+      var issues = JSON.parse(body);
+      for (var i in issues) {
+        var issue = issues[i];
+        debug(issues);
+        console.log("  #" + issue.number + "  " + issue.title);
+      }
+    }
+  );
+};
+
+Cub.prototype.procOpenIssue = function () {
+  console.log('yeah!!! open!!!');
+};
 //-----------------------------------------------
 // main
 
