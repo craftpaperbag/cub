@@ -103,7 +103,7 @@ var Cub = function () {
   this.options = new Options(params);
 
   if ( ! this.validMethod() ) {
-    console.log("sorry, cub cannot use '" + command + "'");
+    console.log("sorry, cub cannot use '" + this.method + "'");
     this.usageExit();
   }
 
