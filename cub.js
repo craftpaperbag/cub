@@ -6,6 +6,7 @@ var DEBUG = false;
 var argv = require('argv');
 var fs = require('fs');
 var request = require('request');
+var readline = require('readline')
 function debug(s) { if (DEBUG) console.log(s); }
 
 // ----------------------------------------------
@@ -193,7 +194,12 @@ Cub.prototype.procGetIssues = function () {
 };
 
 Cub.prototype.procOpenIssue = function () {
-  console.log('yeah!!! open!!!');
+  var _cub = this;
+  var face = readline.createInterface(process.stdin, process.stdout);
+  face.question('  title > ', function (line) {
+    console.log("  ["+line+"]");
+    face.close();
+  });
 };
 //-----------------------------------------------
 // main
