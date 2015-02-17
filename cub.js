@@ -6,6 +6,9 @@ var DEBUG = false;
 var argv = require('argv');
 var fs = require('fs');
 var request = require('request');
+var readlineSync = require('readline-sync');
+var spawn = require('child_process').spawn;
+
 function debug(s) { if (DEBUG) console.log(s); }
 
 // ----------------------------------------------
@@ -77,7 +80,7 @@ Options.prototype.getAuth = function () {
 }
 
 // ----------------------------------------------
-// HTTP GET ----> github api
+// Cub
 //
 
 var Cub = function () {
@@ -87,9 +90,15 @@ var Cub = function () {
       proc: this.procGetIssues,
       title: "issues",
     },
+    open: {
+      url: "https://api.github.com/repos/{user}/{repo}/issues",
+      proc: this.procOpenIssue,
+      title: "open issue",
+    },
   };
   this.aliases = {
     i: 'issues',
+    o: 'open',
   };
 
   var params = argv.run();
@@ -100,15 +109,18 @@ var Cub = function () {
 
   this.options = new Options(params);
 
-  if ( this.validMethod() ) {
-    this.createUrl();
-    this.createHeader();
-  } else {
+  if ( ! this.validMethod() ) {
     console.log("sorry, cub cannot use '" + this.method + "'");
     this.usageExit();
   }
 
   return this;
+}
+
+Cub.prototype.run = function () {
+  this.printTitle();
+  this.proc = this.methods[this.method].proc;
+  this.proc();
 }
 
 Cub.prototype.usageExit = function () {
@@ -119,37 +131,22 @@ Cub.prototype.usageExit = function () {
 }
 
 Cub.prototype.createUrl = function () {
-  this.url = this.methods[this.method].url;
-  this.url = this.url.replace("{user}", this.options.user).replace("{repo}", this.options.repo);
-  debug(this.url);
+  var url = this.methods[this.method].url;
+  var url = url.replace("{user}", this.options.user);
+  var url = url.replace("{repo}", this.options.repo);
+  return url;
 }
 
 Cub.prototype.createHeader = function () {
-  this.headers = { 'Authorization' : this.options.getAuth(), 'User-Agent': 'cub' };
+  var headers = {
+    'Authorization': this.options.getAuth(),
+    'User-Agent': 'cub',
+  };
+  return headers;
 }
 
 Cub.prototype.printTitle = function () {
   console.log('  [' + this.options.user + '/' + this.options.repo +'] ' + this.methods[this.method].title);
-}
-
-Cub.prototype.run = function () {
-  this.printTitle();
-  var _cub = this;
-  request(
-    { url: this.url, headers: this.headers },
-    function (err, response, body) {
-      // !CAUTION! scope changed
-      // this is not Cub's object
-      if ( err || (response && response.statusCode !== 200)) {
-        console.log('error: ' + err);
-        if (response) {
-          console.log(response.statusCode);
-        }
-        throw err;
-      }
-      _cub.methods[_cub.method].proc(body);
-    }
-  );
 }
 
 Cub.prototype.validMethod = function () {
@@ -164,14 +161,124 @@ Cub.prototype.validMethod = function () {
   return false;
 }
 
-Cub.prototype.procGetIssues = function (body) {
-  var issues = JSON.parse(body);
-  for (var i in issues) {
-    var issue = issues[i];
-    debug(issues);
-    console.log("  #" + issue.number + "  " + issue.title);
+// ----------------------------------------------
+// procs
+//
+
+Cub.prototype.request = function (opts, successCode, callback) {
+  successCode = successCode || 200;
+  debug('opts: ' + opts);
+  debug('successCode: ' + successCode);
+  request(opts, function (err, response, body) {
+    //
+    // !CAUTION! scope changed
+    // this is not Cub's object
+    if ( err || (response && response.statusCode != successCode)) {
+      console.log('error: ' + err);
+      if (response) {
+        console.log(response.statusCode);
+      }
+      debug(body);
+      throw err;
+    }
+    
+    callback(body);
+
+  });
+};
+
+Cub.prototype.procGetIssues = function () {
+  var params = {
+    url: this.createUrl(),
+    headers: this.createHeader(),
+  };
+  var _cub = this;
+  var opts = { url: _cub.createUrl(), headers: _cub.createHeader() };
+  this.request(opts, 200, function (body) {
+    //
+    // !CAUTION! scope changed
+    // now 'this' is not Cub object
+    var issues = JSON.parse(body);
+    for (var i in issues) {
+      var issue = issues[i];
+      debug(issues);
+      console.log("  #" + issue.number + "  " + issue.title);
+    }
+  });
+};
+
+// TODO: body input
+Cub.prototype.procOpenIssue = function () {
+  var _cub = this;
+  var opts = {
+    url: _cub.createUrl(),
+    headers: _cub.createHeader(),
+    method: 'POST',
+  };
+
+  var title = readlineSync.question('  title > ');
+  if ( title.length === 0 ) {
+    console.log('canceled');
+    return;
   }
-}
+
+  //
+  // open vim
+  //
+  // TODO: 他のエディター
+  var tmpfileKey = ".cubtmp"
+  var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
+      path += "/" + tmpfileKey + Number(new Date()) + ".md";
+
+  var editor = spawn('vim', [path], {
+    stdio: [
+      process.stdin,
+      process.stdout,
+      process.stderr,
+    ]
+  });
+
+  editor.on('exit', function (code) {
+    // check exit code
+    if ( code != 0 ) {
+      console.log('canceled');
+      return;
+    }
+
+    // get issue body
+    var issueBody;
+    try {
+      issueBody = fs.readFileSync(path).toString();
+      // remove tmpfile
+      fs.unlink(path, function (err) {
+        if (err) {
+          console.log('error: ' + err);
+          throw err;
+        }
+      });
+    } catch (e) {
+      debug('error. it maybe "file not found"');
+      console.log('canceled');
+      return;
+    }
+
+    // check issue body
+    if ( issueBody.length === 0 ) {
+      console.log('canceled');
+      return;
+    }
+    // send request
+    opts.body = JSON.stringify({
+      title: title,
+      body: issueBody,
+    });
+
+    _cub.request(opts, 201/* Created */, function (body) {
+      var number = JSON.parse(body).number;
+      console.log('  #' + number + ' ' + title + ' opened');
+    });
+  });
+};
 //-----------------------------------------------
 // main
 
