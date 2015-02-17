@@ -6,7 +6,8 @@ var DEBUG = false;
 var argv = require('argv');
 var fs = require('fs');
 var request = require('request');
-var readline = require('readline')
+var readlineSync = require('readline-sync');
+
 function debug(s) { if (DEBUG) console.log(s); }
 
 // ----------------------------------------------
@@ -213,24 +214,27 @@ Cub.prototype.procOpenIssue = function () {
     headers: _cub.createHeader(),
     method: 'POST',
   };
-  var face = readline.createInterface(process.stdin, process.stdout);
-  face.question('  title > ', function (line) {
-    if ( line.length === 0 ) {
-      console.log('canceled');
-      return;
-    }
 
-    face.close();
+  var title = readlineSync.question('  title > ');
+  if ( title.length === 0 ) {
+    console.log('canceled');
+    return;
+  }
 
-    opts.body = JSON.stringify({
-      title: line,
-      body: "cub test",
-    });
+  var issueBody = readlineSync.question('  body > ');
+  if ( issueBody.length === 0 ) {
+    console.log('canceled');
+    return;
+  }
 
-    _cub.request(opts, 201/* Created */, function (body) {
-      var number = JSON.parse(body).number;
-      console.log('  #' + number + ' ' + line + ' opened');
-    });
+  opts.body = JSON.stringify({
+    title: title,
+    body: issueBody,
+  });
+
+  _cub.request(opts, 201/* Created */, function (body) {
+    var number = JSON.parse(body).number;
+    console.log('  #' + number + ' ' + title + ' opened');
   });
 };
 //-----------------------------------------------
