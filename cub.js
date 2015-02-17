@@ -229,7 +229,7 @@ Cub.prototype.procOpenIssue = function () {
   var tmpfileKey = ".cubtmp"
   var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
       path += "/" + tmpfileKey + Number(new Date()) + ".md";
-  console.log("XXX:" + path); // XXX
+
   var editor = spawn('vim', [path], {
     stdio: [
       process.stdin,
@@ -237,6 +237,7 @@ Cub.prototype.procOpenIssue = function () {
       process.stderr,
     ]
   });
+
   editor.on('exit', function (code) {
     // check exit code
     if ( code != 0 ) {
@@ -245,10 +246,16 @@ Cub.prototype.procOpenIssue = function () {
     }
 
     // get issue body
-    var issueBody = fs.readFileSync(path).toString();
-    console.log("body: \n" + issueBody); // XXX
-    // TODO: remove tmpfile
+    var issueBody;
+    try {
+      issueBody = fs.readFileSync(path).toString();
+    } catch (e) {
+      debug('error. it maybe "file not found"');
+      console.log('canceled');
+      return;
+    }
 
+    // TODO: remove tmpfile
     // check issue body
     if ( issueBody.length === 0 ) {
       console.log('canceled');
