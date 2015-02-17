@@ -205,21 +205,31 @@ Cub.prototype.procGetIssues = function () {
   });
 };
 
-// TODO: method->POST
-// TODO: successCode-> 201
+// TODO: body input
 Cub.prototype.procOpenIssue = function () {
   var _cub = this;
   var opts = {
     url: _cub.createUrl(),
     headers: _cub.createHeader(),
-    method: 'GET',
+    method: 'POST',
   };
   var face = readline.createInterface(process.stdin, process.stdout);
   face.question('  title > ', function (line) {
-    console.log("  ["+line+"]");
+    if ( line.length === 0 ) {
+      console.log('canceled');
+      return;
+    }
+
     face.close();
-    _cub.request(opts, 200, function (body) {
-      console.log('Cub#request() works ! :D');
+
+    opts.body = JSON.stringify({
+      title: line,
+      body: "cub test",
+    });
+
+    _cub.request(opts, 201/* Created */, function (body) {
+      var number = JSON.parse(body).number;
+      console.log('  #' + number + ' ' + line + ' opened');
     });
   });
 };
