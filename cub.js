@@ -249,13 +249,19 @@ Cub.prototype.procOpenIssue = function () {
     var issueBody;
     try {
       issueBody = fs.readFileSync(path).toString();
+      // remove tmpfile
+      fs.unlink(path, function (err) {
+        if (err) {
+          console.log('error: ' + err);
+          throw err;
+        }
+      });
     } catch (e) {
       debug('error. it maybe "file not found"');
       console.log('canceled');
       return;
     }
 
-    // TODO: remove tmpfile
     // check issue body
     if ( issueBody.length === 0 ) {
       console.log('canceled');
