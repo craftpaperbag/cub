@@ -7,6 +7,7 @@ var argv = require('argv');
 var fs = require('fs');
 var request = require('request');
 var readlineSync = require('readline-sync');
+var spawn = require('child_process').spawn;
 
 function debug(s) { if (DEBUG) console.log(s); }
 
@@ -221,20 +222,48 @@ Cub.prototype.procOpenIssue = function () {
     return;
   }
 
-  var issueBody = readlineSync.question('  body > ');
-  if ( issueBody.length === 0 ) {
-    console.log('canceled');
-    return;
-  }
-
-  opts.body = JSON.stringify({
-    title: title,
-    body: issueBody,
+  //
+  // open vim
+  //
+  // TODO: 他のエディター
+  var tmpfileKey = ".cubtmp"
+  var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
+      path += "/" + tmpfileKey + Number(new Date()) + ".md";
+  console.log("XXX:" + path); // XXX
+  var editor = spawn('vim', [path], {
+    stdio: [
+      process.stdin,
+      process.stdout,
+      process.stderr,
+    ]
   });
+  editor.on('exit', function (code) {
+    // check exit code
+    if ( code != 0 ) {
+      console.log('canceled');
+      return;
+    }
 
-  _cub.request(opts, 201/* Created */, function (body) {
-    var number = JSON.parse(body).number;
-    console.log('  #' + number + ' ' + title + ' opened');
+    // get issue body
+    var issueBody = fs.readFileSync(path);
+    console.log("body: \n" + issueBody); // XXX
+    // TODO: remove tmpfile
+
+    // check issue body
+    if ( issueBody.length === 0 ) {
+      console.log('canceled');
+      return;
+    }
+    // send request
+    opts.body = JSON.stringify({
+      title: title,
+      body: issueBody,
+    });
+
+    _cub.request(opts, 201/* Created */, function (body) {
+      var number = JSON.parse(body).number;
+      console.log('  #' + number + ' ' + title + ' opened');
+    });
   });
 };
 //-----------------------------------------------
