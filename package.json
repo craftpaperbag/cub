@@ -5,6 +5,7 @@
   "homepage": "https://github.com/craftpaperbag/cub",
   "devDependencies": {
     "argv": "0.0.2",
-    "request": "~2.53.0"
+    "request": "~2.53.0",
+    "readline-sync": "~0.5.6"
   }
 }
