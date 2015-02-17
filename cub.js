@@ -245,7 +245,7 @@ Cub.prototype.procOpenIssue = function () {
     }
 
     // get issue body
-    var issueBody = fs.readFileSync(path);
+    var issueBody = fs.readFileSync(path).toString();
     console.log("body: \n" + issueBody); // XXX
     // TODO: remove tmpfile
 
