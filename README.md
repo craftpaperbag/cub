@@ -6,7 +6,8 @@ Command-line tool for browsing github.
 
 #### Issues
 
-    $ cub issues        # List of issues with issue-numbers.
+    $ cub issues        # List of issues with issue-numbers
+    $ cub issue 123     # show an issue
     $ cub open          # Open new issue
 
 ## Getting started

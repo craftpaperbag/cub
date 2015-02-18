@@ -18,7 +18,7 @@ function defineApp() {
     name: 'user',
     short: 'u',
     type: 'string',
-    description: "your github's login name.",
+    description: "your github's login name. This takes priority over your config.",
     example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
   });
 
@@ -26,9 +26,7 @@ function defineApp() {
     name: 'token',
     short: 't',
     type: 'string',
-    description: "your github's token.\n" +
-                 "This takes priority over your config. \n" +
-                 "(see https://help.github.com/articles/creating-an-access-token-for-command-line-use/)",
+    description: "your github's token. This takes priority over your config.",
     example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
   });
 }
@@ -113,7 +111,7 @@ var Cub = function () {
 
   var params = argv.run();
   if ( params.targets.length < 1 ) {
-    usageExit();
+    this.usageExit();
   }
   this.method = params.targets[0];
   this.targets = params.targets;
@@ -135,9 +133,12 @@ Cub.prototype.run = function () {
 }
 
 Cub.prototype.usageExit = function () {
-  console.log('  issues: list of issues');
-  console.log('          $ cub [-u user] [-t token] issues');
-  console.log('          $ cub [-u user] [-t token] i');
+  console.log('  USAGE: cub [ issues | i ]       # List of issues');
+  console.log('  USAGE: cub [ open | o ]         # Open new issue');
+  console.log('  USAGE: cub [ issue 123 | 123 ]  # Show an issue');
+  console.log();
+  console.log('    options help      > cub --help');
+  console.log('    more informations > https://github.com/craftpaperbag/cub');
   process.exit(1);
 }
 

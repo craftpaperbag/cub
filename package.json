@@ -1,6 +1,6 @@
 {
   "name": "cub",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Command-line github tool",
   "homepage": "https://github.com/craftpaperbag/cub",
   "devDependencies": {
