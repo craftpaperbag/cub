@@ -6,8 +6,10 @@ Command-line tool for browsing github.
 
 #### Issues
 
-    $ cub issues        # List of issues with issue-numbers.
+    $ cub issues        # List of issues with issue-numbers
+    $ cub issue 123     # show an issue
     $ cub open          # Open new issue
+    $ cub close 123     # Close an issue
 
 ## Getting started
 
@@ -29,7 +31,7 @@ Cub needs your token. see [Github help](https://help.github.com/articles/creatin
 Clone cub into your repo's working-directory. (and put its link)
 
     $ cd work/your-repo
-    $ git clone https://github.com/craftpaperbag/cub.githttps://github.com/craftpaperbag/cub.git
+    $ git clone https://github.com/craftpaperbag/cub.git
     $ mv cub .cub
     $ ln -s .cub/cub.js cub
 
@@ -37,7 +39,7 @@ Now, you can use
 
     $ cub issues -u username -t yourtokenishere
 
-Add '.cub/' & 'cub' .gitignore
+Add '.cub/' & 'cub' into .gitignore
 
     $ vim .gitignore
     .cub
