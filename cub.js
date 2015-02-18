@@ -35,25 +35,36 @@ function defineApp() {
     short: 'd',
     type: 'boolean',
     description: "debug mode",
-    example: "'cub i --debug true'",
+    example: "'cub i --debug'",
+  });
+
+  argv.option({
+    name: 'all',
+    short: 'a',
+    type: 'boolean',
+    description: "[only 'issues'] List all issues (also closed)",
+    example: "'cub i --all'",
   });
 }
 
 // ----------------------------------------------
 // get params from .cub
+//   & filter argv's options
 
-var Options = function ( argvResult ) {
+var Options = function ( o ) {
   var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
   var path = path.split('/');
   var repo = path[path.length - 1];
 
-  this.user = argvResult.options.user;
-  this.token = argvResult.options.token;
+  this.user = o.options.user;
+  this.token = o.options.token;
   this.repo = repo;
 
-  if ( argvResult.options.debug ) {
+  if ( o.options.debug ) {
     DEBUG = true;
   }
+
+  this.all = o.options.all;
 
   this.openConfig();
   return this;
@@ -234,12 +245,11 @@ Cub.prototype.request = function (opts, successCode, callback) {
 };
 
 Cub.prototype.procGetIssues = function () {
-  var params = {
-    url: this.createUrl(),
-    headers: this.createHeader(),
-  };
   var _cub = this;
   var opts = { url: _cub.createUrl(), headers: _cub.createHeader() };
+  if (_cub.options.all) {
+    opts.qs = {state: 'all'};
+  }
   this.request(opts, 200, function (body) {
     //
     // !CAUTION! scope changed
