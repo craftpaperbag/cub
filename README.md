@@ -37,7 +37,7 @@ Now, you can use
 
     $ cub issues -u username -t yourtokenishere
 
-Add '.cub/' & 'cub' .gitignore
+Add '.cub/' & 'cub' into .gitignore
 
     $ vim .gitignore
     .cub
