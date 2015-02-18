@@ -253,16 +253,12 @@ Cub.prototype.procGetIssues = function () {
   });
 };
 
-Cub.prototype.procGetIssue = function (forClose, number) {
-  debug('forClose: ' + forClose);
-  debug('number: ' + number)
+Cub.prototype.procGetIssue = function () {
+  var number;
   var _cub = this;
-  var standAlone = ! forClose;
-  if ( standAlone ) {
-    for ( var i in _cub.targets ) {
-      if ( _cub.targets[i].match(/^[0-9]+$/) ) {
-        number = _cub.targets[i];
-      }
+  for ( var i in _cub.targets ) {
+    if ( _cub.targets[i].match(/^[0-9]+$/) ) {
+      number = _cub.targets[i];
     }
   }
   if ( ! number ) {
@@ -282,12 +278,10 @@ Cub.prototype.procGetIssue = function (forClose, number) {
     console.log();
     console.log('  #' + issue.number + ' ' + issue.title);
     console.log();
-    if ( standAlone ) {
-      for ( var i in lines ) {
-        console.log('  | ' + lines[i]);
-      }
-      console.log();
+    for ( var i in lines ) {
+      console.log('  | ' + lines[i]);
     }
+    console.log();
   });
 }
 
@@ -301,7 +295,7 @@ Cub.prototype.procOpenIssue = function () {
 
   var title = readlineSync.question('  title > ');
   if ( title.length === 0 ) {
-    console.log('canceled');
+    console.log('  canceled');
     return;
   }
 
@@ -324,7 +318,7 @@ Cub.prototype.procOpenIssue = function () {
   editor.on('exit', function (code) {
     // check exit code
     if ( code != 0 ) {
-      console.log('canceled');
+      console.log('  canceled');
       return;
     }
 
@@ -341,13 +335,13 @@ Cub.prototype.procOpenIssue = function () {
       });
     } catch (e) {
       debug('error. it maybe "file not found"');
-      console.log('canceled');
+      console.log('  canceled');
       return;
     }
 
     // check issue body
     if ( issueBody.length === 0 ) {
-      console.log('canceled');
+      console.log('  canceled');
       return;
     }
     // send request
@@ -379,26 +373,29 @@ Cub.prototype.procCloseIssue = function () {
     _cub.usageExit();
   }
   //
-  // call get issue process
-  _cub.methods['issue'].proc.call(_cub, "for close", number);
-
-  //
-  // request
+  // request for information
   var opts = {
     url: _cub.createUrl({number: number}),
     headers: _cub.createHeader()
   };
-  debug("  url: " + opts.url);
   this.request(opts, 200, function (body) {
     var issue = JSON.parse(body);
-    var lines = issue.body.split("\n");
     console.log();
     console.log('  #' + issue.number + ' ' + issue.title);
     console.log();
-    for ( var i in lines ) {
-      console.log('  | ' + lines[i]);
+    var decidion = readlineSync.question('  close?(y/n) > ');
+    if ( decidion !== 'y' ) {
+      console.log('  canceled');
+      return;
     }
-    console.log();
+    //
+    // CLOSE request
+    opts.method = 'PATCH';
+    opts.body = JSON.stringify({state: 'closed'});
+    _cub.request(opts, 200, function (body) {
+      console.log('  closed.');
+      return;
+    });
   });
 }
 //-----------------------------------------------
