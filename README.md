@@ -1,4 +1,4 @@
-# cub 0.0.3
+# cub 0.0.4
 
 Command-line tool for browsing github.
 
@@ -63,9 +63,22 @@ then, you can use
 
 ## Options
 
-    --user(-u)  : your github's login name
-                  This takes priority over your config.
+    global
+      -h --help
+      -u --user
+      -t --token
+      -d --debug
+    for 'issues'
+      -a --all
+      -c --closed-only
+      -o --open-only
+    for 'open'
+      -T --title
+      -B --body
+    
+    use '-h' for more information
 
-    --token(-t) : your github's token
-                  This takes priority over your config.
 
+---
+
+enjoy GitHub life !
