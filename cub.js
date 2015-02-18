@@ -29,6 +29,14 @@ function defineApp() {
     description: "your github's token. This takes priority over your config.",
     example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
   });
+
+  argv.option({
+    name: 'debug',
+    short: 'd',
+    type: 'boolean',
+    description: "debug mode",
+    example: "'cub i --debug true'",
+  });
 }
 
 // ----------------------------------------------
@@ -42,6 +50,10 @@ var Options = function ( argvResult ) {
   this.user = argvResult.options.user;
   this.token = argvResult.options.token;
   this.repo = repo;
+
+  if ( argvResult.options.debug ) {
+    DEBUG = true;
+  }
 
   this.openConfig();
   return this;
@@ -98,10 +110,16 @@ var Cub = function () {
       proc: this.procOpenIssue,
       title: "open issue",
     },
+    close: {
+      url: "https://api.github.com/repos/{user}/{repo}/issues/{number}",
+      proc: this.procCloseIssue,
+      title: "close issue",
+    },
   };
   this.aliases = {
     i: 'issues',
     o: 'open',
+    c: 'close',
   };
   this.aliasesPresenter = function (command) {
     // issue
@@ -133,9 +151,10 @@ Cub.prototype.run = function () {
 }
 
 Cub.prototype.usageExit = function () {
-  console.log('  USAGE: cub [ issues | i ]       # List of issues');
-  console.log('  USAGE: cub [ open | o ]         # Open new issue');
-  console.log('  USAGE: cub [ issue 123 | 123 ]  # Show an issue');
+  console.log('  USAGE: cub [ issues | i ]         # List of issues');
+  console.log('  USAGE: cub [ open | o ]           # Open new issue');
+  console.log('  USAGE: cub [ issue 123 | 123 ]    # Show an issue');
+  console.log('  USAGE: cub [ close 123 | c 123 ]  # Close an issue');
   console.log();
   console.log('    options help      > cub --help');
   console.log('    more informations > https://github.com/craftpaperbag/cub');
@@ -234,12 +253,16 @@ Cub.prototype.procGetIssues = function () {
   });
 };
 
-Cub.prototype.procGetIssue = function () {
+Cub.prototype.procGetIssue = function (forClose, number) {
+  debug('forClose: ' + forClose);
+  debug('number: ' + number)
   var _cub = this;
-  var number;
-  for ( var i in _cub.targets ) {
-    if ( _cub.targets[i].match(/^[0-9]+$/) ) {
-      number = _cub.targets[i];
+  var standAlone = ! forClose;
+  if ( standAlone ) {
+    for ( var i in _cub.targets ) {
+      if ( _cub.targets[i].match(/^[0-9]+$/) ) {
+        number = _cub.targets[i];
+      }
     }
   }
   if ( ! number ) {
@@ -259,10 +282,12 @@ Cub.prototype.procGetIssue = function () {
     console.log();
     console.log('  #' + issue.number + ' ' + issue.title);
     console.log();
-    for ( var i in lines ) {
-      console.log('  | ' + lines[i]);
+    if ( standAlone ) {
+      for ( var i in lines ) {
+        console.log('  | ' + lines[i]);
+      }
+      console.log();
     }
-    console.log();
   });
 }
 
@@ -337,6 +362,45 @@ Cub.prototype.procOpenIssue = function () {
     });
   });
 };
+
+// TODO: get issue information
+// TODO: prompt y/n
+// TODO: edit request (state=close)
+Cub.prototype.procCloseIssue = function () {
+  var _cub = this;
+  var number;
+  for ( var i in _cub.targets ) {
+    if ( _cub.targets[i].match(/^[0-9]+$/) ) {
+      number = _cub.targets[i];
+    }
+  }
+  if ( ! number ) {
+    debug('error: procCloseIssue number: ' + number);
+    _cub.usageExit();
+  }
+  //
+  // call get issue process
+  _cub.methods['issue'].proc.call(_cub, "for close", number);
+
+  //
+  // request
+  var opts = {
+    url: _cub.createUrl({number: number}),
+    headers: _cub.createHeader()
+  };
+  debug("  url: " + opts.url);
+  this.request(opts, 200, function (body) {
+    var issue = JSON.parse(body);
+    var lines = issue.body.split("\n");
+    console.log();
+    console.log('  #' + issue.number + ' ' + issue.title);
+    console.log();
+    for ( var i in lines ) {
+      console.log('  | ' + lines[i]);
+    }
+    console.log();
+  });
+}
 //-----------------------------------------------
 // main
 
