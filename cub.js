@@ -90,6 +90,11 @@ var Cub = function () {
       proc: this.procGetIssues,
       title: "issues",
     },
+    issue: {
+      url: "https://api.github.com/repos/{user}/{repo}/issue/{number}",
+      proc: this.procGetIssue,
+      title: "issue",
+    },
     open: {
       url: "https://api.github.com/repos/{user}/{repo}/issues",
       proc: this.procOpenIssue,
@@ -100,12 +105,18 @@ var Cub = function () {
     i: 'issues',
     o: 'open',
   };
+  this.aliasesPresenter = function (command) {
+    // issue
+    if ( command.match(/^[0-9]+$/) ) return "issue";
+    return "";
+  };
 
   var params = argv.run();
-  if ( params.targets.length !== 1 ) {
+  if ( params.targets.length < 1 ) {
     usageExit();
   }
   this.method = params.targets[0];
+  this.targets = params.targets;
 
   this.options = new Options(params);
 
@@ -153,11 +164,23 @@ Cub.prototype.validMethod = function () {
   if ( this.methods[this.method] ) {
     return this.method;
   }
+  //
+  // check aliases
   var alias = this.aliases[this.method];
   if ( alias ) {
     this.method = alias;
     return this.method;
   }
+  //
+  // attempt aliasesPresenter
+  alias = this.aliasesPresenter(this.method);
+  if ( alias ) {
+    this.method = alias;
+    return this.method;
+  }
+  //
+  // no match.
+  debug('no match');
   return false;
 }
 
@@ -206,6 +229,21 @@ Cub.prototype.procGetIssues = function () {
     }
   });
 };
+
+Cub.prototype.procGetIssue = function () {
+  var _cub = this;
+  var number;
+  for ( var i in _cub.targets ) {
+    if ( _cub.targets[i].match(/^[0-9]+$/) ) {
+      number = _cub.targets[i];
+    }
+  }
+  if ( ! number ) {
+    debug('error: procGetIssue number: ' + number);
+    _cub.usageExit();
+  }
+  console.log('yeah! number is '+number);
+}
 
 // TODO: body input
 Cub.prototype.procOpenIssue = function () {
