@@ -247,10 +247,17 @@ Cub.prototype.procGetIssues = function () {
     var issues = JSON.parse(body);
     for (var i in issues) {
       var issue = issues[i];
-      debug(issues);
-      console.log("  #" + issue.number + "  " + issue.title);
+      var state = '' + issue.state + '  ';
+          state = state.slice(0, 6);
+      console.log("  " + _cub.trimIssue(issue));
     }
   });
+};
+
+Cub.prototype.trimIssue = function (issue) {
+  var state = '' + issue.state + '  ';
+      state = state.slice(0, 5);
+  return state + "  #" + issue.number + "  " + issue.title;
 };
 
 Cub.prototype.procGetIssue = function () {
@@ -275,11 +282,14 @@ Cub.prototype.procGetIssue = function () {
   this.request(opts, 200, function (body) {
     var issue = JSON.parse(body);
     var lines = issue.body.split("\n");
-    console.log();
-    console.log('  #' + issue.number + ' ' + issue.title);
-    console.log();
+    //          |  open   #123 issue-title
+    //          |  closed #123 issue-title
+    var nitch = '         | ';
+    console.log(nitch);
+    console.log('  ' + _cub.trimIssue(issue));
+    console.log(nitch);
     for ( var i in lines ) {
-      console.log('  | ' + lines[i]);
+      console.log(nitch + lines[i]);
     }
     console.log();
   });
