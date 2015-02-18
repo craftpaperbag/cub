@@ -9,6 +9,7 @@ Command-line tool for browsing github.
     $ cub issues        # List of issues with issue-numbers
     $ cub issue 123     # show an issue
     $ cub open          # Open new issue
+    $ cub close 123     # Close an issue
 
 ## Getting started
 
