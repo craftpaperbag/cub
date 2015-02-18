@@ -19,7 +19,7 @@ function defineApp() {
     short: 'u',
     type: 'string',
     description: "your github's login name. This takes priority over your config.",
-    example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
+    example: "'cub issues --user=craftpaperbag # or -u string'",
   });
 
   argv.option({
@@ -27,7 +27,7 @@ function defineApp() {
     short: 't',
     type: 'string',
     description: "your github's token. This takes priority over your config.",
-    example: "'cub --user craftpaperbag --token xxxxxxxxxx'",
+    example: "'cub issues --token xxxxxxxxxx # or -t string'",
   });
 
   argv.option({
@@ -35,7 +35,7 @@ function defineApp() {
     short: 'd',
     type: 'boolean',
     description: "debug mode",
-    example: "'cub i --debug'",
+    example: "'cub issues --debug'",
   });
 
   //
@@ -45,24 +45,44 @@ function defineApp() {
     name: 'all',
     short: 'a',
     type: 'boolean',
-    description: "[only 'issues'] List all issues (also closed)",
-    example: "'cub i --all'",
+    description: "{issues} List all issues (also closed)",
+    example: "'cub issues --all'",
   });
 
   argv.option({
     name: 'closed-only',
     short: 'c',
     type: 'boolean',
-    description: "[only 'issues'] List closed issues",
-    example: "'cub i --closed-only'",
+    description: "{issues} List closed issues",
+    example: "'cub issues --closed-only'",
   });
 
   argv.option({
     name: 'open-only',
     short: 'o',
     type: 'boolean',
-    description: "[only 'issues'] List open issues (default)",
-    example: "'cub i --open-only'",
+    description: "{issues} List open issues (default)",
+    example: "'cub issues --open-only'",
+  });
+
+  //
+  // for open
+  //
+
+  argv.option({
+    name: 'title',
+    short: 'T',
+    type: 'string',
+    description: "{open} Give issue title",
+    example: "'cub open --title=\"this is issue\" # or -T string'",
+  });
+
+  argv.option({
+    name: 'body',
+    short: 'B',
+    type: 'string',
+    description: "{open} Give issue body",
+    example: "'cub open --body=\"body of issue\" # or -B string",
   });
 }
 
@@ -83,12 +103,21 @@ var Options = function ( o ) {
     DEBUG = true;
   }
 
+  //
+  // for issues
+  //
   this.all = o.options.all;
   this.closedOnly = o.options['closed-only'];
   this.openOnly = o.options['open-only'];
   if ( this.closedOnly && this.openOnly ) {
     this.all = true;
   }
+
+  //
+  // for open
+  //
+  this.title = o.options.title;
+  this.body = o.options.body;
 
   this.openConfig();
   return this;
@@ -340,11 +369,30 @@ Cub.prototype.procOpenIssue = function () {
     headers: _cub.createHeader(),
     method: 'POST',
   };
-
-  var title = readlineSync.question('  title > ');
+  
+  var title = _cub.options.title;
+  if ( ! title ) {
+    title = readlineSync.question('  title > ');
+  }
   if ( title.length === 0 ) {
     console.log('  canceled');
     return;
+  }
+
+  //
+  // open request method
+  //
+  function procOpenRequest(_title, _body) {
+    // send request
+    opts.body = JSON.stringify({
+      title: _title,
+      body: _body,
+    });
+
+    _cub.request(opts, 201/* Created */, function (body) {
+      var number = JSON.parse(body).number;
+      console.log('  #' + number + ' ' + _title + ' opened');
+    });
   }
 
   //
@@ -353,61 +401,63 @@ Cub.prototype.procOpenIssue = function () {
   // TODO: 他のエディター
   var tmpfileKey = ".cubtmp"
   var path = fs.realpathSync('./');  //同期でカレントディレクトリを取得
-      path += "/" + tmpfileKey + Number(new Date()) + ".md";
+      path += "/" + tmpfileKey + Number(new Date()) + ".markdown";
 
-  var editor = spawn('vim', [path], {
-    stdio: [
-      process.stdin,
-      process.stdout,
-      process.stderr,
-    ]
-  });
-
-  editor.on('exit', function (code) {
-    // check exit code
-    if ( code != 0 ) {
-      console.log('  canceled');
-      return;
-    }
-
-    // get issue body
-    var issueBody;
-    try {
-      issueBody = fs.readFileSync(path).toString();
-      // remove tmpfile
-      fs.unlink(path, function (err) {
-        if (err) {
-          console.log('error: ' + err);
-          throw err;
-        }
-      });
-    } catch (e) {
-      debug('error. it maybe "file not found"');
-      console.log('  canceled');
-      return;
-    }
-
+  var issueBody = _cub.options.body;
+  if ( issueBody ) {
+    issueBody = _cub.options.body;
     // check issue body
     if ( issueBody.length === 0 ) {
       console.log('  canceled');
       return;
     }
     // send request
-    opts.body = JSON.stringify({
-      title: title,
-      body: issueBody,
+    procOpenRequest(title, issueBody);
+
+  } else {
+
+    var editor = spawn('vim', [path], {
+      stdio: [
+        process.stdin,
+        process.stdout,
+        process.stderr,
+      ]
     });
 
-    _cub.request(opts, 201/* Created */, function (body) {
-      var number = JSON.parse(body).number;
-      console.log('  #' + number + ' ' + title + ' opened');
+    editor.on('exit', function (code) {
+      // check exit code
+      if ( code != 0 ) {
+        console.log('  canceled');
+        return;
+      }
+
+      // get issue body
+      try {
+        issueBody = fs.readFileSync(path).toString();
+        // remove tmpfile
+        fs.unlink(path, function (err) {
+          if (err) {
+            console.log('error: ' + err);
+            throw err;
+          }
+        });
+      } catch (e) {
+        debug('error. it maybe "file not found"');
+        console.log('  canceled');
+        return;
+      }
+
+      // check issue body
+      if ( issueBody.length === 0 ) {
+        console.log('  canceled');
+        return;
+      }
+      // send request
+      procOpenRequest(title, issueBody);
     });
-  });
+  }
 };
 
-// TODO: get issue information
-// TODO: prompt y/n
-// TODO: edit request (state=close)
 Cub.prototype.procCloseIssue = function () {
   var _cub = this;
   var number;
