@@ -38,12 +38,31 @@ function defineApp() {
     example: "'cub i --debug'",
   });
 
+  //
+  // for issues
+  //
   argv.option({
     name: 'all',
     short: 'a',
     type: 'boolean',
     description: "[only 'issues'] List all issues (also closed)",
     example: "'cub i --all'",
+  });
+
+  argv.option({
+    name: 'closed-only',
+    short: 'c',
+    type: 'boolean',
+    description: "[only 'issues'] List closed issues",
+    example: "'cub i --closed-only'",
+  });
+
+  argv.option({
+    name: 'open-only',
+    short: 'o',
+    type: 'boolean',
+    description: "[only 'issues'] List open issues (default)",
+    example: "'cub i --open-only'",
   });
 }
 
@@ -65,6 +84,11 @@ var Options = function ( o ) {
   }
 
   this.all = o.options.all;
+  this.closedOnly = o.options['closed-only'];
+  this.openOnly = o.options['open-only'];
+  if ( this.closedOnly && this.openOnly ) {
+    this.all = true;
+  }
 
   this.openConfig();
   return this;
@@ -249,6 +273,10 @@ Cub.prototype.procGetIssues = function () {
   var opts = { url: _cub.createUrl(), headers: _cub.createHeader() };
   if (_cub.options.all) {
     opts.qs = {state: 'all'};
+  } else if (_cub.options.closedOnly) {
+    opts.qs = {state: 'closed'};
+  } else if (_cub.options.openOnly) {
+    opts.qs = {state: 'open'};
   }
   this.request(opts, 200, function (body) {
     //
