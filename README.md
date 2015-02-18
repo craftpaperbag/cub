@@ -29,7 +29,7 @@ Cub needs your token. see [Github help](https://help.github.com/articles/creatin
 Clone cub into your repo's working-directory. (and put its link)
 
     $ cd work/your-repo
-    $ git clone https://github.com/craftpaperbag/cub.githttps://github.com/craftpaperbag/cub.git
+    $ git clone https://github.com/craftpaperbag/cub.git
     $ mv cub .cub
     $ ln -s .cub/cub.js cub
 
