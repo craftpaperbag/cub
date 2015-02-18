@@ -91,7 +91,7 @@ var Cub = function () {
       title: "issues",
     },
     issue: {
-      url: "https://api.github.com/repos/{user}/{repo}/issue/{number}",
+      url: "https://api.github.com/repos/{user}/{repo}/issues/{number}",
       proc: this.procGetIssue,
       title: "issue",
     },
@@ -141,10 +141,13 @@ Cub.prototype.usageExit = function () {
   process.exit(1);
 }
 
-Cub.prototype.createUrl = function () {
+Cub.prototype.createUrl = function (others) {
   var url = this.methods[this.method].url;
-  var url = url.replace("{user}", this.options.user);
-  var url = url.replace("{repo}", this.options.repo);
+  url = url.replace("{user}", this.options.user);
+  url = url.replace("{repo}", this.options.repo);
+  for (var key in others) {
+    url = url.replace('{' + key + '}', others[key]);
+  }
   return url;
 }
 
@@ -242,10 +245,26 @@ Cub.prototype.procGetIssue = function () {
     debug('error: procGetIssue number: ' + number);
     _cub.usageExit();
   }
-  console.log('yeah! number is '+number);
+  //
+  // request
+  var opts = {
+    url: _cub.createUrl({number: number}),
+    headers: _cub.createHeader()
+  };
+  debug("  url: " + opts.url);
+  this.request(opts, 200, function (body) {
+    var issue = JSON.parse(body);
+    var lines = issue.body.split("\n");
+    console.log();
+    console.log('  #' + issue.number + ' ' + issue.title);
+    console.log();
+    for ( var i in lines ) {
+      console.log('  | ' + lines[i]);
+    }
+    console.log();
+  });
 }
 
-// TODO: body input
 Cub.prototype.procOpenIssue = function () {
   var _cub = this;
   var opts = {
